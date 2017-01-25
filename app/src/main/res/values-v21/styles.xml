@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+        <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+                <!-- Customize your theme here. -->
+                <item name="colorPrimary">@color/colorPrimary</item>
+                <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+                <item name="colorAccent">@color/colorAccent</item>
+                <item name="android:textColorPrimary">@color/textColorPrimary</item>
+                <item name="android:colorBackground">@color/background_material_light</item>
+                <item name="android:colorButtonNormal">@color/buttonColor</item>
+        </style>
+
+        <style name="RedTheme" parent="Theme.AppCompat.Light.NoActionBar">
+                <item name="android:colorBackground">@color/readBackgroundMaterial</item>
+                <item name="android:colorButtonNormal">@color/redButtonColor</item>
+                <item name="colorPrimary">@color/redColorPrimary</item>
+                <item name="colorPrimaryDark">@color/redDarkColorPrimary</item>
+                <item name="colorAccent">@color/redAccentMaterial</item>
+        </style>
+</resources>

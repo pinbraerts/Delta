@@ -1,7 +1,11 @@
 package did.delta;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.app.AlertDialog;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.InputFilter;
@@ -18,6 +22,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -25,7 +30,7 @@ import java.util.HashSet;
 import java.util.Random;
 
 public class GameActivity extends AppCompatActivity
-    implements View.OnClickListener, InputFilter, View.OnKeyListener { // Эта строчка позволяет Java рассматривать эту страницу и как обработчик нажатия на кнопку)
+    implements View.OnClickListener, InputFilter, View.OnKeyListener, DialogInterface.OnDismissListener { // Эта строчка позволяет Java рассматривать эту страницу и как обработчик нажатия на кнопку)
 
     @Override
     public CharSequence filter(CharSequence charSequence, int i, int i1, Spanned spanned, int i2, int i3) { // Этот метод проверяет текст на правильность)
@@ -43,8 +48,13 @@ public class GameActivity extends AppCompatActivity
         return "";
     }
 
+    @Override
+    public void onDismiss(DialogInterface dialogInterface) {
+        endOfGame.onClick(dialogInterface, DialogInterface.BUTTON_NEGATIVE); // Эмульрую нажатие на кнопку "нет")
+    }
+
     public interface WordGuessedListener {
-        void onWordGuessedListener();
+        void onWordGuessedListener(int turns);
     }
 
     private class WordAdapter extends ArrayAdapter<String> { // Эта штуковина отвечает за отображение слова и за операции, связанные с жобавлением слова)
@@ -67,11 +77,16 @@ public class GameActivity extends AppCompatActivity
             textView.setTextSize(30);
             textView.setTextColor(getColor(R.color.textColorPrimary));
             layout.addView(textView);
-            if(string.length() > 4 && string.charAt(4) == ',') {
+            if(string.length() > 4) {
                 TextView deltas = new TextView(getContext());
-                deltas.setText(string.substring(5));
+                deltas.setText(string.substring(4));
                 deltas.setTextSize(30);
                 deltas.setTextColor(getColor(R.color.textColorPrimary));
+                deltas.setGravity(Gravity.END);
+                deltas.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        100));
                 layout.addView(deltas);
             }
             return layout;
@@ -82,19 +97,24 @@ public class GameActivity extends AppCompatActivity
             array.add(string);
             int deltas = 0, factorials = 0;
             for(int i = 0; i < string.length(); ++i) {
-                int chr = string.charAt(i) - 'а'; // Русская)
+                int chr = string.charAt(i) == 'ё' ? 7 : string.charAt(i) - 'а'; // Русская)
                 if(wordChars[chr]) // Массив с true на местах, соответствующим буквам искомого слова)
                     if(string.charAt(i) == word.charAt(i)) ++factorials; // Прямое попадание)
                     else ++deltas;
             }
             if(factorials != 0 || deltas != 0) {
-                string += ",";
                 for(int i = 0; i < factorials; ++i) string += '!';
                 for(int i = 0; i < deltas; ++i) string += 'Δ';
             }
             super.add(string);
-            if(factorials == 4) wordListener.onWordGuessedListener(); // Выполняется то, что должно быть после угадывания слова)
+            if(factorials == 4) wordListener.onWordGuessedListener(array.size()); // Выполняется то, что должно быть после угадывания слова)
             wordBox.setText("");
+        }
+
+        @Override
+        public void clear() {
+            array.clear();
+            super.clear();
         }
 
         public int indexOf(String s) {
@@ -102,39 +122,96 @@ public class GameActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        try {
+            FileOutputStream fileWriter = openFileOutput("hightscore.txt", MODE_PRIVATE);
+            fileWriter.write(hightScore + '0');
+            fileWriter.close();
+        } catch (IOException e) {
+            Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+        }
+        super.onBackPressed();
+    }
+
     private WordAdapter adapter;
     private TextView wordBox;
     private String word;
     private HashSet<String> words = new HashSet<>();
     private boolean wordChars[] = new boolean[33];
-    private WordGuessedListener wordListener = new WordGuessedListener() {
+    private DialogInterface.OnClickListener endOfGame = new DialogInterface.OnClickListener() {
         @Override
-        public void onWordGuessedListener() {
-            Toast.makeText(getApplicationContext(), "Угадал!", Toast.LENGTH_SHORT).show();
+        public void onClick(DialogInterface dialogInterface, int i) {
+            switch (i) {
+                case DialogInterface.BUTTON_POSITIVE:
+                    adapter.clear();
+                    wordBox.clearComposingText();
+                    word = getRandomWord();
+                    if(word == null) word = "душа";
+                    parceWord();
+                    break;
+                case DialogInterface.BUTTON_NEGATIVE:
+                    onBackPressed();
+                    break;
+            }
+        }
+    };
+    private WordGuessedListener wordListener = new WordGuessedListener() {
+        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+        @Override
+        public void onWordGuessedListener(int turns) {
+            AlertDialog.Builder dialog =
+                    new AlertDialog.Builder(GameActivity.this)
+                    .setMessage("Вы отгадали слово \"" + word + "\" за " + turns + " ход" + getStringObject(turns) + "!\nНачать новую игру?")
+                    .setPositiveButton("Да", endOfGame)
+                    .setNegativeButton("Нет", endOfGame)
+                    .setOnDismissListener(GameActivity.this);
+            if(turns > hightScore) {
+                hightScore = turns;
+                dialog.setTitle("Новый личный рекорд!");
+            }
+            else dialog.setTitle("Победа!");
+            dialog.show();
         }
     };
     private Button enterButton;
+    private int hightScore = 0;
+
+    private String getStringObject(int turns) {
+        switch(turns % 10) {
+            case 1:
+                return "";
+            case 2: case 3: case 4:
+                return "а";
+            default:
+                return "ов";
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         try {
             BufferedReader fileReader = new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.words)));
-            int last = new Random().nextInt(756);
             String temword;
             for(int i = 0; (temword = fileReader.readLine()) != null; ++i) {
-                if(i == last) word = temword;
                 words.add(temword);
             }
             fileReader.close();
+            word = getRandomWord();
+            if(word == null) word = "душа";
         } catch (IOException e) {
             Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
             word = "душа";
         }
-        for(int i = 0; i < word.length(); ++i) {
-            int chr = word.charAt(i) - 'а'; // Русская)
-            wordChars[chr] = true;
+        try {
+            InputStreamReader fileReader = new InputStreamReader(getResources().openRawResource(R.raw.hightscore));
+            hightScore = fileReader.read() - '0';
+            fileReader.close();
+        } catch (IOException e) {
+            Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
         }
+        parceWord();
 
         setContentView(R.layout.activity_game);
 
@@ -152,12 +229,30 @@ public class GameActivity extends AppCompatActivity
         wordBox.setOnKeyListener(this);
     }
 
+    private void parceWord() {
+        for(int i = 0; i < 33; ++i) wordChars[i] = false;
+        for(int i = 0; i < word.length(); ++i) {
+            int chr = word.charAt(i) == 'ё' ? 7 : word.charAt(i) - 'а'; // Русская)
+            wordChars[chr] = true;
+        }
+    }
+
+    private String getRandomWord() {
+        int item = new Random().nextInt(words.size());
+        int j = 0;
+        for(String str : words) {
+            if (j == item) return str;
+            j++;
+        }
+        return null;
+    }
+
     @Override
     public boolean onKey(View v, int keyCode, KeyEvent event)
     {
         if (event.getAction() == KeyEvent.ACTION_DOWN
                 && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-            enterButton.performClick();
+            if(wordBox.length() > 3) enterButton.performClick(); // Теперь нельзя будет нажать ентер раньше времени)
             return true;
         }
         return false;
