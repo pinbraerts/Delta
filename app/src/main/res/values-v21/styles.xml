@@ -12,10 +12,11 @@
         </style>
 
         <style name="RedTheme" parent="Theme.AppCompat.Light.NoActionBar">
-                <item name="android:colorBackground">@color/readBackgroundMaterial</item>
+                <item name="android:colorBackground">@color/redBackgroundMaterial</item>
                 <item name="android:colorButtonNormal">@color/redButtonColor</item>
                 <item name="colorPrimary">@color/redColorPrimary</item>
                 <item name="colorPrimaryDark">@color/redDarkColorPrimary</item>
                 <item name="colorAccent">@color/redAccentMaterial</item>
+                <item name="android:textColorPrimary">@color/redTextColorPrimary</item>
         </style>
 </resources>

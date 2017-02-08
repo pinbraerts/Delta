@@ -1,8 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="background_material_light">#bff6ff</color>
-    <color name="redColorPrimary">#f5f5f5</color>
-    <color name="redDarkColorPrimary">#757575</color>
-    <color name="redAccentMaterial">#009688</color>
-    <color name="readBackgroundMaterial">#ffdead</color>
 </resources>

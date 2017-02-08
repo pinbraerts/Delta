@@ -6,13 +6,19 @@
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:textColorPrimary">@color/textColorPrimary</item>
         <item name="android:colorBackground">@color/background_material_light</item>
+        <item name="android:buttonStyle">@style/buttonStyle</item>
+    </style>
+
+    <style name="buttonStyle" parent="@android:style/Widget.Button">
+        <item name="android:colorBackground">#33FF44</item>
     </style>
 
     <style name="RedTheme" parent="Theme.AppCompat.Light.NoActionBar" >
-        <item name="android:colorBackground">@color/readBackgroundMaterial</item>
+        <item name="android:colorBackground">@color/redBackgroundMaterial</item>
         <item name="colorPrimary">@color/redColorPrimary</item>
         <item name="colorPrimaryDark">@color/redDarkColorPrimary</item>
         <item name="colorAccent">@color/redAccentMaterial</item>
+        <item name="android:textColorPrimary">@color/redTextColorPrimary</item>
     </style>
 
 </resources>
