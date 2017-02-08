@@ -224,44 +224,32 @@ public class GameActivity extends AppCompatActivity
         helper = new DBHelper(this);
         SQLiteDatabase database = helper.getReadableDatabase();
         try {
-
             Cursor c = database.rawQuery("select count(*) from words", null);
             c.moveToFirst();
             if(c.getInt(0) == 0) {
                 c.close();
                 helper.close();
+                try {
+                    database = helper.getWritableDatabase();
+                    BufferedReader fileReader = new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.words)));
+                    String temword;
 
-                new Thread() {
-                    @Override
-                    public void run() {
-                        ProgressBar progress = new ProgressBar(getApplicationContext(), null, android.R.style.Widget_ProgressBar);
-                        progress.setVisibility(ProgressBar.VISIBLE);
-                        AlertDialog dialog = new AlertDialog.Builder(getApplicationContext())
-                                .setTitle("Загружаются слова...").setView(progress).show();
-                        try {
-                            SQLiteDatabase database = helper.getWritableDatabase();
-                            BufferedReader fileReader = new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.words)));
-                            String temword;
-
-                            for (int i = 0; (temword = fileReader.readLine()) != null; ++i) {
-                                ContentValues cv = new ContentValues();
-                                cv.put("word", temword);
-                                cv.put("description", "NULL");
-                                cv.put("accepted", 1);
-                                database.insertOrThrow(getString(R.string.db_name), null, cv);
-                            }
-                            fileReader.close();
-                        } catch (SQLiteException e) {
-                            Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                        } catch (IOException e) {
-                            Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                            word = "душа";
-                        } finally {
-                            helper.close();
-                            dialog.dismiss();
-                        }
+                    for (int i = 0; (temword = fileReader.readLine()) != null; ++i) {
+                        ContentValues cv = new ContentValues();
+                        cv.put("word", temword);
+                        cv.put("description", "NULL");
+                        cv.put("accepted", 1);
+                        database.insertOrThrow(getString(R.string.db_name), null, cv);
                     }
-                }.start();
+                    fileReader.close();
+                } catch (SQLiteException e) {
+                    Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                } catch (IOException e) {
+                    Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                    word = "душа";
+                } finally {
+                    helper.close();
+                }
             } else c.close();
             helper.close();
             word = getRandomWord();
