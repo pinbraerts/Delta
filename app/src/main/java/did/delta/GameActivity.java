@@ -1,22 +1,18 @@
 package did.delta;
 
+import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.app.AlertDialog;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.InputFilter;
 import android.text.Spanned;
-
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -25,73 +21,55 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Random;
 
 public class GameActivity extends AppCompatActivity
-    implements View.OnClickListener, InputFilter, View.OnKeyListener, DialogInterface.OnCancelListener { // Эта строчка позволяет Java рассматривать эту страницу и как обработчик нажатия на кнопку)
+    implements View.OnClickListener, InputFilter, View.OnKeyListener, DialogInterface.OnCancelListener {
 
     @Override
-    public CharSequence filter(CharSequence charSequence, int i, int i1, Spanned spanned, int i2, int i3) { // Этот метод проверяет текст на правильность)
-        if(charSequence.toString().matches("[а-я,ё]") // Это значит, что строка состоит из русских букв и короче 5)
+    public CharSequence filter(CharSequence charSequence, int i, int i1, Spanned spanned, int i2, int i3) {
+        if(charSequence.toString().matches("[а-я,ё]")
                 && i2 < 4
                 && (charSequence.length() == 0
                 || wordBox.getText()
                         .toString()
-                        .indexOf(charSequence.charAt(charSequence.length() - 1)) == -1) // Если в предыдущей строке нет такого же символа)
+                        .indexOf(charSequence.charAt(charSequence.length() - 1)) == -1)
                 ) {
-            enterButton.setEnabled(i2 == 3); // Если слово достаточно длинное, то можно и включить кнопку)
-            return null; // Можно вернуть null или строку, если null, то срока правильная, а если какая-нибудь строка, то она и становится текстом в окошке)
+            enterButton.setEnabled(i2 == 3);
+            return null;
         }
-        enterButton.setEnabled(i2 == 4); // А тут выключаем, если текущее слово не длинное)
+        enterButton.setEnabled(i2 == 4);
         return "";
     }
 
     @Override
-    public void onCancel(DialogInterface dialogInterface) {
-        try {
-            FileOutputStream fileWriter = openFileOutput("highscore.txt", MODE_PRIVATE);
-            fileWriter.write(highscore + '0');
-            fileWriter.close();
-        } catch (IOException e) {
-            Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+    public void onBackPressed() {
+        if(!gameEnd) {
+            try {
+                SQLiteDatabase db = helper.getWritableDatabase();
+                for (String string : adapter.array) {
+                    ContentValues cv = new ContentValues();
+                    cv.put("word", string.substring(0, 4));
+                    cv.put("info", string.substring(4));
+                    db.insertOrThrow(DBHelper.SAVE_TABLE_NAME, null, cv);
+                }
+            } finally {
+                helper.close();
+            }
         }
+        super.onBackPressed();
+    }
+
+    @Override
+    public void onCancel(DialogInterface dialogInterface) {
         onBackPressed();
     }
 
     public interface WordGuessedListener {
         void onWordGuessedListener(int turns);
-    }
-
-    private class DBHelper extends SQLiteOpenHelper {
-
-        public DBHelper(Context context) {
-            super(context, getString(R.string.db_name), null, 1);
-        }
-
-        public DBHelper(Context context, int version) {
-            super(context, getString(R.string.db_name), null, version);
-        }
-
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-            db.execSQL("create table " + getString(R.string.db_name) + "(word varchar(4), description varchar(255), accepted integer);");
-        }
-
-        @Override
-        public void onUpgrade(SQLiteDatabase db, int i, int i1) {
-            db.execSQL("drop table if exists " + getResources().getString(R.string.db_name) + ';');
-            onCreate(db);
-        }
     }
 
     private class WordAdapter extends ArrayAdapter<String> {
@@ -112,13 +90,13 @@ public class GameActivity extends AppCompatActivity
             assert string != null;
             textView.setText(string.substring(0, 4));
             textView.setTextSize(30);
-            textView.setTextColor(getColor(R.color.redTextColorPrimary));
+            textView.setTextColor(getColor(R.color.textColorPrimary));
             layout.addView(textView);
             if(string.length() > 4) {
                 TextView deltas = new TextView(getContext());
                 deltas.setText(string.substring(4));
                 deltas.setTextSize(30);
-                deltas.setTextColor(getColor(R.color.redTextColorPrimary));
+                deltas.setTextColor(getColor(R.color.textColorPrimary));
                 deltas.setGravity(Gravity.END);
                 deltas.setLayoutParams(new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -163,25 +141,21 @@ public class GameActivity extends AppCompatActivity
     private TextView wordBox;
     private String word;
     private boolean wordChars[] = new boolean[33];
+    private boolean gameEnd = false;
     private DBHelper helper;
     private DialogInterface.OnClickListener endOfGame = new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialogInterface, int i) {
+            gameEnd = true;
             switch (i) {
                 case DialogInterface.BUTTON_POSITIVE:
                     adapter.clear();
-                    wordBox.clearComposingText();
+                    wordBox.setText("");
                     word = getRandomWord();
                     parceWord();
                     break;
                 case DialogInterface.BUTTON_NEGATIVE:
-                    try {
-                        FileOutputStream fileWriter = openFileOutput("highscore.txt", MODE_PRIVATE);
-                        fileWriter.write(highscore + '0');
-                        fileWriter.close();
-                    } catch (IOException e) {
-                        Toast.makeText(GameActivity.this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                    }
+                    GameActivity.this.onBackPressed();
                     break;
             }
         }
@@ -222,42 +196,7 @@ public class GameActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         helper = new DBHelper(this);
-        SQLiteDatabase database = helper.getReadableDatabase();
-        try {
-            Cursor c = database.rawQuery("select count(*) from words", null);
-            c.moveToFirst();
-            if(c.getInt(0) == 0) {
-                c.close();
-                helper.close();
-                try {
-                    database = helper.getWritableDatabase();
-                    BufferedReader fileReader = new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.words)));
-                    String temword;
-
-                    for (int i = 0; (temword = fileReader.readLine()) != null; ++i) {
-                        ContentValues cv = new ContentValues();
-                        cv.put("word", temword);
-                        cv.put("description", "NULL");
-                        cv.put("accepted", 1);
-                        database.insertOrThrow(getString(R.string.db_name), null, cv);
-                    }
-                    fileReader.close();
-                } catch (SQLiteException e) {
-                    Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                } catch (IOException e) {
-                    Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                    word = "душа";
-                } finally {
-                    helper.close();
-                }
-            } else c.close();
-            helper.close();
-            word = getRandomWord();
-        } catch (SQLiteException e) {
-            Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-        } finally {
-            helper.close();
-        }
+        word = getRandomWord();
         // word = "душа";
         parceWord();
 
@@ -275,6 +214,17 @@ public class GameActivity extends AppCompatActivity
         wordBox = (TextView) findViewById(R.id.wordBox);
         wordBox.setFilters(new InputFilter[] { this });
         wordBox.setOnKeyListener(this);
+
+        if(savedInstanceState != null && savedInstanceState.getBoolean("load")) {
+            Cursor c = helper.getReadableDatabase().rawQuery("select * from " + DBHelper.SAVE_TABLE_NAME, null);
+            if(c.moveToFirst()) {
+                do {
+                    adapter.add(c.getString(c.getColumnIndex("word")) + c.getString(c.getColumnIndex("info")));
+                } while(c.moveToNext());
+            }
+            c.close();
+            helper.close();
+        }
     }
 
     private void parceWord() {
@@ -288,7 +238,8 @@ public class GameActivity extends AppCompatActivity
     private String getRandomWord() {
         try {
             SQLiteDatabase db = helper.getReadableDatabase();
-            Cursor c = db.rawQuery("select word from words where accepted = 1 order by RANDOM() limit 1;", null);
+            Cursor c = db.rawQuery("select word from " + DBHelper.WORDS_TABLE_NAME +
+                    " where accepted = 1 order by RANDOM() limit 1", null);
             if(c.moveToFirst()) return c.getString(c.getColumnIndex("word"));
             c.close();
             Toast.makeText(this, "Error: word database is empty!", Toast.LENGTH_SHORT).show();
@@ -323,9 +274,10 @@ public class GameActivity extends AppCompatActivity
         }
         try {
             Cursor c = helper.getReadableDatabase()
-                    .rawQuery("select word from words where word = ?", new String[]{temword});
-            if (c.moveToFirst()) adapter.add(wordBox.getText().toString());
-            else Toast.makeText(this, "Слова \"" + temword + "\" не существует!", Toast.LENGTH_SHORT).show();
+                    .rawQuery("select count(*) from " + DBHelper.WORDS_TABLE_NAME +
+                            " where word = ?", new String[]{temword});
+            if (c.moveToFirst() && c.getInt(0) > 0) adapter.add(wordBox.getText().toString());
+            else Toast.makeText(this, "Слова \"" + temword + "\" не существует в списке слов!", Toast.LENGTH_SHORT).show();
             c.close();
         } finally {
             helper.close();

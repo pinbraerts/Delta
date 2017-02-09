@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Delta</string>
-    <string name="db_name">words</string>
+    <string name="db_name">did.db</string>
+    <string name="table_name">words</string>
 </resources>

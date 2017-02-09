@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#0288ff</color>
-    <color name="colorPrimaryDark">#0f2b62</color>
-    <color name="colorAccent">#00cde3</color>
-    <color name="textColorPrimary">#10106f</color>
-    <color name="buttonColor">#4570FF</color>
-    <color name="redButtonColor">#32CD32</color>
-    <color name="background_material_light">#bff6ff</color>
-    <color name="redColorPrimary">#228b22</color>
-    <color name="redDarkColorPrimary">#008000</color>
-    <color name="redAccentMaterial">#2fcc2f</color>
-    <color name="redBackgroundMaterial">#b7fb98</color>
-    <color name="redTextColorPrimary">#006400</color>
+    <color name="colorPrimary">#228b22</color>
+    <color name="colorPrimaryDark">#008000</color>
+    <color name="colorAccent">#2fcc2f</color>
+    <color name="buttonColor">#32CD32</color>
+    <color name="backgroundMaterial">#b7fb98</color>
+    <color name="textColorPrimary">#006400</color>
 </resources>
