@@ -7,10 +7,11 @@
         <item name="android:textColorPrimary">@color/textColorPrimary</item>
         <item name="android:colorBackground">@color/backgroundMaterial</item>
         <item name="android:buttonStyle">@style/buttonStyle</item>
+        <item name="android:colorForeground">@color/colorAccent</item>
     </style>
 
     <style name="buttonStyle" parent="@android:style/Widget.Button">
-        <item name="android:colorBackground">#33FF44</item>
+        <item name="android:colorBackground">@color/buttonColor</item>
     </style>
 
 </resources>

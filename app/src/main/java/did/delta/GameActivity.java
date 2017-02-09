@@ -1,14 +1,15 @@
 package did.delta;
-
 import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputFilter;
@@ -25,41 +26,33 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 public class GameActivity extends AppCompatActivity
     implements View.OnClickListener, InputFilter, View.OnKeyListener, DialogInterface.OnCancelListener {
 
     @Override
-    public CharSequence filter(CharSequence charSequence, int i, int i1, Spanned spanned, int i2, int i3) {
+    public CharSequence filter(CharSequence charSequence, int i, int i1,
+                               Spanned spanned, int i2, int i3) {
+        int len = i1 - i + wordBox.length();
         if(charSequence.toString().matches("[а-я,ё]")
-                && i2 < 4
+                && len <= 4
                 && (charSequence.length() == 0
                 || wordBox.getText()
                         .toString()
                         .indexOf(charSequence.charAt(charSequence.length() - 1)) == -1)
                 ) {
-            enterButton.setEnabled(i2 == 3);
+            enterButton.setEnabled(len == 4);
             return null;
         }
-        enterButton.setEnabled(i2 == 4);
+        enterButton.setEnabled(wordBox.length() == 4);
         return "";
     }
 
     @Override
     public void onBackPressed() {
-        if(!gameEnd) {
-            try {
-                SQLiteDatabase db = helper.getWritableDatabase();
-                for (String string : adapter.array) {
-                    ContentValues cv = new ContentValues();
-                    cv.put("word", string.substring(0, 4));
-                    cv.put("info", string.substring(4));
-                    db.insertOrThrow(DBHelper.SAVE_TABLE_NAME, null, cv);
-                }
-            } finally {
-                helper.close();
-            }
-        }
+        saveGame();
         super.onBackPressed();
     }
 
@@ -70,6 +63,26 @@ public class GameActivity extends AppCompatActivity
 
     public interface WordGuessedListener {
         void onWordGuessedListener(int turns);
+    }
+
+    private void saveGame() {
+        try {
+            SQLiteDatabase db = helper.getWritableDatabase();
+            db.execSQL("delete from " + DBHelper.SAVE_TABLE_NAME);
+            db.execSQL("vacuum");
+            if(!gameEnd) {
+                ContentValues cv = new ContentValues();
+                cv.put("word", word);
+                db.insertOrThrow(DBHelper.SAVE_TABLE_NAME, null, cv);
+                for (String string : adapter.array) {
+                    cv = new ContentValues();
+                    cv.put("word", string);
+                    db.insertOrThrow(DBHelper.SAVE_TABLE_NAME, null, cv);
+                }
+            }
+        } finally {
+            helper.close();
+        }
     }
 
     private class WordAdapter extends ArrayAdapter<String> {
@@ -164,22 +177,25 @@ public class GameActivity extends AppCompatActivity
         @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
         public void onWordGuessedListener(int turns) {
+            SharedPreferences pref = getPreferences(MODE_PRIVATE);
+            int highscore = pref.getInt("highscore", -1);
             AlertDialog.Builder dialog =
                     new AlertDialog.Builder(GameActivity.this)
-                    .setMessage("Вы отгадали слово \"" + word + "\" за " + turns + " ход" + getStringObject(turns) + "!\nНачать новую игру?")
+                    .setMessage("Вы отгадали слово \"" + word + "\" за "
+                            + turns + " ход" + getStringObject(turns) + "!\nНачать новую игру?")
                     .setPositiveButton("Да", endOfGame)
                     .setNegativeButton("Нет", endOfGame)
                     .setOnCancelListener(GameActivity.this);
-            if(turns > highscore) {
-                highscore = turns;
+            if(highscore < 0 || turns < highscore) {
+                SharedPreferences.Editor editor = pref.edit();
+                editor.putInt("highscore", turns);
+                editor.apply();
                 dialog.setTitle("Новый личный рекорд!");
-            }
-            else dialog.setTitle("Победа!");
+            } else dialog.setTitle("Победа!");
             dialog.show();
         }
     };
     private Button enterButton;
-    private int highscore = 0;
 
     private String getStringObject(int turns) {
         switch(turns % 10) {
@@ -196,9 +212,6 @@ public class GameActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         helper = new DBHelper(this);
-        word = getRandomWord();
-        // word = "душа";
-        parceWord();
 
         setContentView(R.layout.activity_game);
 
@@ -215,19 +228,23 @@ public class GameActivity extends AppCompatActivity
         wordBox.setFilters(new InputFilter[] { this });
         wordBox.setOnKeyListener(this);
 
-        if(savedInstanceState != null && savedInstanceState.getBoolean("load")) {
+        if(getIntent().getBooleanExtra("load", false)) {
             Cursor c = helper.getReadableDatabase().rawQuery("select * from " + DBHelper.SAVE_TABLE_NAME, null);
             if(c.moveToFirst()) {
-                do {
-                    adapter.add(c.getString(c.getColumnIndex("word")) + c.getString(c.getColumnIndex("info")));
-                } while(c.moveToNext());
+                word = c.getString(c.getColumnIndex("word"));
+                parceWord();
+                while(c.moveToNext()) adapter.add(c.getString(c.getColumnIndex("word")));
             }
             c.close();
             helper.close();
+        } else {
+            word = getRandomWord();
+            parceWord();
         }
     }
 
     private void parceWord() {
+        // Toast.makeText(this, word, Toast.LENGTH_LONG).show();
         for(int i = 0; i < 33; ++i) wordChars[i] = false;
         for(int i = 0; i < word.length(); ++i) {
             int chr = word.charAt(i) == 'ё' ? 7 : word.charAt(i) - 'а';

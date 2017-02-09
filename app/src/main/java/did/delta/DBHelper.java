@@ -30,15 +30,17 @@ public class DBHelper extends SQLiteOpenHelper {
     @RequiresApi(api = Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table " + WORDS_TABLE_NAME + " (word varchar(4), description varchar(255), accepted integer);");
-        db.execSQL("create table " + SAVE_TABLE_NAME + " (word varchar(4), info varchar(4));");
+        db.execSQL("create table " + WORDS_TABLE_NAME +
+                " (word varchar(4), description varchar(255), accepted integer)");
+        db.execSQL("create table " + SAVE_TABLE_NAME + " (word varchar(4))");
 
         try {
-            BufferedReader fileReader = new BufferedReader(new InputStreamReader(mContext.getResources().openRawResource(R.raw.words)));
+            BufferedReader fileReader = new BufferedReader(
+                    new InputStreamReader(mContext.getResources().openRawResource(R.raw.words)));
             String[] temwords;
             String temword;
 
-            for (int i = 0; (temword = fileReader.readLine()) != null; ++i) {
+            while((temword = fileReader.readLine()) != null) {
                 temwords = temword.split(" ");
                 ContentValues cv = new ContentValues();
                 cv.put("word", temwords[0]);
@@ -55,8 +57,8 @@ public class DBHelper extends SQLiteOpenHelper {
     @RequiresApi(api = Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
-        db.execSQL("drop table if exists " + WORDS_TABLE_NAME + ';');
-        db.execSQL("drop table if exists " + SAVE_TABLE_NAME + ';');
+        db.execSQL("drop table if exists " + WORDS_TABLE_NAME);
+        db.execSQL("drop table if exists " + SAVE_TABLE_NAME);
         onCreate(db);
     }
 }
