@@ -6,28 +6,26 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.InputFilter;
 import android.text.Spanned;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
 
 public class GameActivity extends AppCompatActivity
     implements View.OnClickListener, InputFilter, View.OnKeyListener, DialogInterface.OnCancelListener {
@@ -68,7 +66,7 @@ public class GameActivity extends AppCompatActivity
     private void saveGame() {
         try {
             SQLiteDatabase db = helper.getWritableDatabase();
-            db.execSQL("delete from " + DBHelper.SAVE_TABLE_NAME);
+            db.execSQL(getString(R.string.cmd_delete, DBHelper.SAVE_TABLE_NAME));
             db.execSQL("vacuum");
             if(!gameEnd) {
                 ContentValues cv = new ContentValues();
@@ -173,39 +171,48 @@ public class GameActivity extends AppCompatActivity
             }
         }
     };
+
+    private void noSuchWord (String temword, String description) {
+        try {
+            SQLiteDatabase db = helper.getWritableDatabase();
+            ContentValues cv = new ContentValues();
+            cv.put("word", temword);
+            cv.put("description", description);
+            cv.put("accepted", false);
+            db.insertOrThrow(DBHelper.WORDS_TABLE_NAME, null, cv);
+        } finally {
+            helper.close();
+        }
+    };
+
     private WordGuessedListener wordListener = new WordGuessedListener() {
-        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
         public void onWordGuessedListener(int turns) {
             SharedPreferences pref = getPreferences(MODE_PRIVATE);
             int highscore = pref.getInt("highscore", -1);
             AlertDialog.Builder dialog =
                     new AlertDialog.Builder(GameActivity.this)
-                    .setMessage("Вы отгадали слово \"" + word + "\" за "
-                            + turns + " ход" + getStringObject(turns) + "!\nНачать новую игру?")
-                    .setPositiveButton("Да", endOfGame)
-                    .setNegativeButton("Нет", endOfGame)
+                    .setMessage(getString(R.string.you_won_msg, word, turns,
+                            getResources().getQuantityString(R.plurals.turns, turns)))
+                    .setPositiveButton(R.string.yes, endOfGame)
+                    .setNegativeButton(R.string.no, endOfGame)
                     .setOnCancelListener(GameActivity.this);
             if(highscore < 0 || turns < highscore) {
                 SharedPreferences.Editor editor = pref.edit();
                 editor.putInt("highscore", turns);
                 editor.apply();
-                dialog.setTitle("Новый личный рекорд!");
-            } else dialog.setTitle("Победа!");
+                dialog.setTitle(R.string.new_record);
+            } else dialog.setTitle(R.string.win);
             dialog.show();
         }
     };
     private Button enterButton;
 
-    private String getStringObject(int turns) {
-        switch(turns % 10) {
-            case 1:
-                return "";
-            case 2: case 3: case 4:
-                return "а";
-            default:
-                return "ов";
-        }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == android.R.id.home) onBackPressed();
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -214,6 +221,12 @@ public class GameActivity extends AppCompatActivity
         helper = new DBHelper(this);
 
         setContentView(R.layout.activity_game);
+
+        setSupportActionBar((Toolbar)findViewById(R.id.gameToolbar));
+        if(getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
 
         adapter = new WordAdapter(this,
                 android.R.layout.simple_expandable_list_item_1,
@@ -229,7 +242,7 @@ public class GameActivity extends AppCompatActivity
         wordBox.setOnKeyListener(this);
 
         if(getIntent().getBooleanExtra("load", false)) {
-            Cursor c = helper.getReadableDatabase().rawQuery("select * from " + DBHelper.SAVE_TABLE_NAME, null);
+            Cursor c = helper.getReadableDatabase().rawQuery(String.format(getString(R.string.cmd_full_query), DBHelper.SAVE_TABLE_NAME), null);
             if(c.moveToFirst()) {
                 word = c.getString(c.getColumnIndex("word"));
                 parceWord();
@@ -255,15 +268,14 @@ public class GameActivity extends AppCompatActivity
     private String getRandomWord() {
         try {
             SQLiteDatabase db = helper.getReadableDatabase();
-            Cursor c = db.rawQuery("select word from " + DBHelper.WORDS_TABLE_NAME +
-                    " where accepted = 1 order by RANDOM() limit 1", null);
+            Cursor c = db.rawQuery(getString(R.string.cmd_get_random, DBHelper.WORDS_TABLE_NAME), null);
             if(c.moveToFirst()) return c.getString(c.getColumnIndex("word"));
             c.close();
-            Toast.makeText(this, "Error: word database is empty!", Toast.LENGTH_SHORT).show();
-            return "душа";
+            Toast.makeText(this, R.string.err_empty_db, Toast.LENGTH_SHORT).show();
+            return getString(R.string.default_word);
         } catch (Exception e) {
             Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-            return "душа";
+            return getString(R.string.default_word);
         } finally {
             helper.close();
         }
@@ -282,21 +294,41 @@ public class GameActivity extends AppCompatActivity
 
     @Override
     public void onClick(View view) {
-        String temword = wordBox.getText().toString();
+        final String temword = wordBox.getText().toString();
         int index = adapter.indexOf(temword);
         if(index != -1) {
-            Toast.makeText(this, "Слово \"" + temword + "\" уже было!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.word_was, temword), Toast.LENGTH_SHORT).show();
             ((ListView) findViewById(R.id.wordsList)).setSelection(index);
             return;
         }
         try {
             Cursor c = helper.getReadableDatabase()
-                    .rawQuery("select count(*) from " + DBHelper.WORDS_TABLE_NAME +
-                            " where word = ?", new String[]{temword});
-            if (c.moveToFirst() && c.getInt(0) > 0) adapter.add(wordBox.getText().toString());
-            else Toast.makeText(this, "Слова \"" + temword + "\" не существует в списке слов!", Toast.LENGTH_SHORT).show();
+                    .rawQuery(getString(R.string.get_count_cond, DBHelper.WORDS_TABLE_NAME), new String[]{temword});
+            if (c.moveToFirst() && c.getInt(0) > 0) {
+                adapter.add(wordBox.getText().toString());
+                view.setEnabled(false);
+            }
+            else {
+                final EditText text = new EditText(this);
+                text.setHint(R.string.enter_description);
+                new AlertDialog.Builder(this)
+                        .setTitle(getString(R.string.err_no_such_word, temword))
+                        .setMessage(R.string.add_word_question)
+                        .setView(text)
+                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                noSuchWord(temword, text.getText().toString());
+                            }
+                        })
+                        .setNegativeButton(R.string.no, null).show();
+            }
             c.close();
-        } finally {
+        }
+        catch(Exception e) {
+            Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+        }
+        finally {
             helper.close();
         }
     }

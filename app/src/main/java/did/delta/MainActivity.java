@@ -11,8 +11,7 @@ public class MainActivity extends AppCompatActivity {
     private void refreshButton() {
         DBHelper helper = new DBHelper(MainActivity.this);
         Cursor c = helper.getReadableDatabase().rawQuery("select count(*) from " + DBHelper.SAVE_TABLE_NAME, null);
-        if(!c.moveToFirst() || c.getInt(0) == 0) findViewById(R.id.buttonContinue).setEnabled(false);
-        else findViewById(R.id.buttonContinue).setEnabled(true);
+        findViewById(R.id.buttonContinue).setEnabled(c.moveToFirst() && c.getInt(0) != 0);
         c.close();
         helper.close();
     }
@@ -43,6 +42,12 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(MainActivity.this, GameActivity.class));
             }
         });
+        findViewById(R.id.buttonWordsList).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, ListActivity.class));
+            }
+        });
         findViewById(R.id.buttonExit).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -58,4 +63,5 @@ public class MainActivity extends AppCompatActivity {
             }
         }.start();
     }
+
 }

@@ -41,10 +41,10 @@ public class DBHelper extends SQLiteOpenHelper {
             String temword;
 
             while((temword = fileReader.readLine()) != null) {
-                temwords = temword.split(" ");
+                temwords = temword.split("\\|");
                 ContentValues cv = new ContentValues();
                 cv.put("word", temwords[0]);
-                cv.put("description", temwords.length > 1 ? temwords[1] : "null");
+                cv.put("description", temwords.length > 1 ? temwords[1] : "");
                 cv.put("accepted", temwords.length > 2 ? temwords[2] : "1");
                 db.insertOrThrow(WORDS_TABLE_NAME, null, cv);
             }
@@ -54,7 +54,6 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
         db.execSQL("drop table if exists " + WORDS_TABLE_NAME);

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Дельта</string>
+    <string name="add_word_question">Добавить слово в список?</string>
+    <string name="enter_description">Введите описание</string>
+    <string name="err_empty_db">Ошибка: база данных слов пуста!</string>
+    <string name="err_no_such_word">Слова \"%s\" не существует в списке слов!</string>
+    <string name="new_record">Новый личный рекорд!</string>
+    <string name="no">Нет</string>
+    <string name="win">Победа!</string>
+    <string name="word_was">Слово \"%s\" уже было!</string>
+    <string name="yes">Да</string>
+    <string name="you_won_msg">Вы отгадали слово \"%1$s\" за %2$d %3$s! Начать новую игру?</string>
+</resources>
