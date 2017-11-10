@@ -2,22 +2,35 @@
     <string name="app_name">Delta</string>
     <string name="db_name" translatable="false">did.db</string>
     <string name="err_empty_db">Error: word database is empty!</string>
-    <string name="cmd_get_random" translatable="false">select word from %s where accepted = 1 order by RANDOM() limit 1</string>
+    <string name="cmd_get_random" translatable="false">select word from %s order by RANDOM() limit 1</string>
     <string name="default_word" translatable="false">душа</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="you_won_msg">You guessed word \"%1$s\" with %2$d %3$s!\nStart new game?</string>
     <string name="win">Win!</string>
     <string name="cmd_delete" translatable="false">delete from %s</string>
+    <string name="cmd_delete_table" translatable="false">drop table if exists %s</string>
     <string name="cmd_full_query" translatable="false">select * from %s</string>
-    <string name="get_count_cond" translatable="false">select count(*) from %s where word = ?</string>
-    <string name="cmd_usr_query" translatable="false">select * from %1$s where accepted = %2$d</string>
+    <string name="cmd_count_entrys" translatable="false">select count(*) from %1s where word = \"%2s\"</string>
+    <string name="cmd_count" translatable="false">select count(*) from %s</string>
+    <string name="cmd_usr_query" translatable="false">select %4$s from %1$s where %2$s = \"%3$s\"</string>
     <plurals name="turns">
         <item quantity="one">ход</item>
         <item quantity="two">хода</item>
         <item quantity="few">хода</item>
         <item quantity="many">ходов</item>
     </plurals>
+    <string-array name="table_types">
+        <item>words</item>
+        <item>user_words</item>
+    </string-array>
+    <string name="cmd_create_table">create table %1s_%2s (word text, description text)</string>
+    <string name="cmd_create_save_table">create table save_%2s (word text, description text, results text)</string>
+    <string name="highscores_table_name">highscores</string>
+    <string name="cmd_create_table_highscores">create table %s (game_type text, score integer)</string>
+    <string-array name="game_types">
+        <item>normal</item>
+    </string-array>
     <string name="add_word_question">Add word to list?</string>
     <string name="enter_description">Enter description</string>
     <string name="err_no_such_word">No such word in words list (\"%s\")!</string>
