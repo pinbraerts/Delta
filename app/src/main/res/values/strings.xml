@@ -20,7 +20,7 @@
         <item quantity="few">хода</item>
         <item quantity="many">ходов</item>
     </plurals>
-    <string-array name="table_types">
+    <string-array name="table_types" translatable="false">
         <item>words</item>
         <item>user_words</item>
     </string-array>
@@ -28,7 +28,7 @@
     <string name="cmd_create_save_table" translatable="false">create table save_%2s (word text, description text, results text)</string>
     <string name="highscores_table_name" translatable="false">highscores</string>
     <string name="cmd_create_table_highscores" translatable="false">create table %s (game_type text, score integer)</string>
-    <string-array name="game_types">
+    <string-array name="game_types" translatable="false">
         <item>normal</item>
     </string-array>
     <string name="add_word_question">Add word to list?</string>
