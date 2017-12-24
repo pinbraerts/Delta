@@ -23,6 +23,11 @@ class DBHelper(private val context: Context, version: Int) :
         return res
     }
 
+    fun delete(tableName: String, column: String, value: String) {
+        writableDatabase.delete(tableName, "$column=?", arrayOf(value))
+        close()
+    }
+
     fun setInt(tableName: String, cmpcolumn: String, cmpval: String, column: String, value: Int) {
         try {
             val cv = ContentValues()
@@ -53,7 +58,7 @@ class DBHelper(private val context: Context, version: Int) :
                rescolumn: String, default: Int = -1) : Int {
         val c = readableDatabase.
                 rawQuery(context.getString(R.string.cmd_usr_query, tableName,
-                         cmpcolumn, cmpval, rescolumn),
+                        cmpcolumn, cmpval, rescolumn),
                         null)
         var res = default
         if (c.moveToFirst()) res = c.getInt(c.getColumnIndex(rescolumn))
@@ -84,13 +89,21 @@ class DBHelper(private val context: Context, version: Int) :
     fun readAll(tableName: String): ArrayList<WordsListRow> {
         val res = ArrayList<WordsListRow>()
         val c = readableDatabase.rawQuery(context.getString(R.string.cmd_full_query, tableName), null)
-        c.moveToFirst()
-        do res.add(WordsListRow(c.getString(c.getColumnIndex("word")),
+        if(c.moveToFirst()) do res.add(WordsListRow(c.getString(c.getColumnIndex("word")),
                 c.getString(c.getColumnIndex("description")),
-                c.getString(c.getColumnIndex("results"))))
-        while(c.moveToNext())
+                c.getString(c.getColumnIndex("results")))) while(c.moveToNext())
         c.close()
-		close()
+        close()
+        return res
+    }
+
+    fun readAll2(tableName: String): ArrayList<Pair<String, String>> {
+        val res = ArrayList<Pair<String, String>>()
+        val c = readableDatabase.rawQuery(context.getString(R.string.cmd_full_query, tableName), null)
+        if(c.moveToFirst()) do res.add(c.getString(c.getColumnIndex("word")) to
+                c.getString(c.getColumnIndex("description"))) while(c.moveToNext())
+        c.close()
+        close()
         return res
     }
 
@@ -99,7 +112,7 @@ class DBHelper(private val context: Context, version: Int) :
         var res: String? = null
         if(c.moveToFirst()) res = c.getString(c.getColumnIndex("word"))!!
         c.close()
-		close()
+        close()
         return res ?: throw Exception("Database is empty!")
     }
 

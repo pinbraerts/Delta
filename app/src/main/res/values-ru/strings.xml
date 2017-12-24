@@ -8,7 +8,10 @@
     <string name="new_record">Новый личный рекорд!</string>
     <string name="no">Нет</string>
     <string name="win">Победа!</string>
-    <string name="word_was">Слово \"%s\" уже было!</string>
+    <string name="word_is">Слово \"%s\" уже есть!</string>
     <string name="yes">Да</string>
     <string name="you_won_msg">Вы отгадали слово \"%1$s\" за %2$d %3$s! Начать новую игру?</string>
+    <string name="enter_word_hint">Введите слово</string>
+    <string name="submit_word">Ввод</string>
+    <string name="word_invalid">Слово \"%s\" невозможно для данного типа игры!</string>
 </resources>

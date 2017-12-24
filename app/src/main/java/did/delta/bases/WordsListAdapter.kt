@@ -10,17 +10,24 @@ import android.widget.ImageButton
 import android.widget.TextView
 import did.delta.R
 
-open class WordsListAdapter(context: Context?, private var layoutInflater:
-            LayoutInflater = LayoutInflater.from(context),
-                            private var itemDelete: OnItemDeletedListner?) :
-        ArrayAdapter<WordsListRow>(context, R.id.list_item), View.OnClickListener {
+open class WordsListAdapter(context: Context?,
+                            private var itemDelete: OnItemDeletedListner? = null,
+                            arrayList: ArrayList<Pair<String, String>> = arrayListOf(),
+                            private var layoutInflater: LayoutInflater =
+                                LayoutInflater.from(context)) :
+        ArrayAdapter<Pair<String, String>>(context, R.id.list_item, arrayList),
+        View.OnClickListener {
 
     abstract class OnItemDeletedListner {
-        abstract fun onItemDelete(position: Int)
+        abstract fun onItemDelete(item: Pair<String, String>)
     }
 
     private val deleteWord = View.OnClickListener {
-        itemDelete?.onItemDelete((it as ImageButton).tag as Int)
+        val pos = (it as ImageButton).tag as Int
+        val item = getItem(pos)
+        itemDelete?.onItemDelete(item)
+        remove(item)
+        notifyDataSetChanged()
     }
 
     private var lastIt: TextView? = null
@@ -37,6 +44,7 @@ open class WordsListAdapter(context: Context?, private var layoutInflater:
                     it.setSingleLine()
             }
             it.maxLines = Int.MAX_VALUE
+            it.setSingleLine(false)
             lastIt = it
         }
     }
@@ -45,27 +53,15 @@ open class WordsListAdapter(context: Context?, private var layoutInflater:
         val lay = convertView ?: layoutInflater.inflate(R.layout.list_words_item, parent, false)
         val item = getItem(position)
 
-        lay.findViewById<TextView>(R.id.item_word).text = item.word
-        val descr = lay.findViewById<TextView>(R.id.item_description)
-        descr.text = item.description
-        descr.setOnClickListener(this)
-        lay.findViewById<TextView>(R.id.item_results).text = item.results
-
-        itemDelete?.let {
-            val btn = lay.findViewById<ImageButton>(R.id.item_delete)
-            btn.visibility = View.VISIBLE
-            btn.setOnClickListener(deleteWord)
-            btn.tag = position
-        }
+        lay.findViewById<TextView>(R.id.item_word).text = item.first
+        val res = lay.findViewById<TextView>(R.id.item_results)
+        res.visibility = View.VISIBLE
+        res.text = item.second
 
         return lay
     }
 
     fun indexOf(word: String) : Int? {
-        return (0 until count).firstOrNull { word == getItem(it).word }
-    }
-
-    open fun append(word: String, second: String) {
-        add(WordsListRow(word, "", second))
+        return (0 until count).firstOrNull { word == getItem(it).first }
     }
 }

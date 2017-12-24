@@ -24,10 +24,10 @@
         <item>words</item>
         <item>user_words</item>
     </string-array>
-    <string name="cmd_create_table">create table %1s_%2s (word text, description text)</string>
-    <string name="cmd_create_save_table">create table save_%2s (word text, description text, results text)</string>
-    <string name="highscores_table_name">highscores</string>
-    <string name="cmd_create_table_highscores">create table %s (game_type text, score integer)</string>
+    <string name="cmd_create_table" translatable="false">create table %1s_%2s (word text, description text)</string>
+    <string name="cmd_create_save_table" translatable="false">create table save_%2s (word text, description text, results text)</string>
+    <string name="highscores_table_name" translatable="false">highscores</string>
+    <string name="cmd_create_table_highscores" translatable="false">create table %s (game_type text, score integer)</string>
     <string-array name="game_types">
         <item>normal</item>
     </string-array>
@@ -35,5 +35,8 @@
     <string name="enter_description">Enter description</string>
     <string name="err_no_such_word">No such word in words list (\"%s\")!</string>
     <string name="new_record">New record!</string>
-    <string name="word_was">Word \"%s\" already was!</string>
+    <string name="word_is">Word \"%s\" already was!</string>
+    <string name="submit_word">Enter</string>
+    <string name="word_invalid">Word \"%s\" is invalid for this type of game!</string>
+    <string name="enter_word_hint">Enter the word</string>
 </resources>

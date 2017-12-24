@@ -4,7 +4,7 @@ import android.app.AlertDialog
 import android.os.Bundle
 import did.delta.bases.GameActivityBase
 
-import did.delta.util.*
+import did.delta.util.DBHelper
 
 class GameActivity : GameActivityBase() {
     override fun wordGuessed(tries: Int) {
@@ -26,13 +26,7 @@ class GameActivity : GameActivityBase() {
         d.show()
     }
 
-    override fun checkChar(c: Char): Boolean {
-        return inRussianAlphabet(c)
-    }
-
     private lateinit var helper: DBHelper
-    protected val gameType: String = "normal"
-    override val maxCharacters: Int = 4
     private lateinit var saveTableName: String
     private lateinit var userWordsTableName: String
     private lateinit var wordsTableName: String
@@ -52,7 +46,7 @@ class GameActivity : GameActivityBase() {
             val words = helper.readAll(saveTableName)
             val iter = words.asSequence()
             iter.drop(1).forEach {
-                adapter.add(it)
+                adapter.add(it.word to it.results)
             }
             return words[0].word
         }
@@ -69,9 +63,9 @@ class GameActivity : GameActivityBase() {
                 *(0 until adapter.count).map {
                     val item = adapter.getItem(it)
                     mapOf(
-                            "word" to item.word,
-                            "description" to item.description,
-                            "results" to item.results)}.toTypedArray()))
+                            "word" to item.first,
+                            "description" to "",
+                            "results" to item.second)}.toTypedArray()))
     }
 
     override fun isLegal(word: String): Boolean {

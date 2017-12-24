@@ -17,7 +17,7 @@ private fun convertRussian(c: Char) : Char {
 }
 
 fun cmpRussian(a: Char, b: Char) : Int {
-    return convertRussian(a) - convertRussian(b)
+    return convertRussian(b) - convertRussian(a)
 }
 
 fun isIdentical(string: String) : Boolean {

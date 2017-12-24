@@ -21,9 +21,7 @@ abstract class GameActivityBase : AppCompatActivity(), View.OnClickListener,
     abstract fun isLegal(word: String) : Boolean
     abstract fun addNewWord(word: String, description: String)
     abstract fun wordGuessed(tries: Int)
-    abstract fun checkChar(c: Char) : Boolean
     abstract fun save()
-    abstract val maxCharacters: Int
 
     override fun onKey(v: View?, keyCode: Int, event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_ENTER) {
@@ -40,13 +38,13 @@ abstract class GameActivityBase : AppCompatActivity(), View.OnClickListener,
     override fun onClick(it: View) {
         val word = wordBox.text.toString()
         adapter.indexOf(word)?.let {
-            toast(getString(R.string.word_was, word))
-            findViewById<ListView>(R.id.wordsList).setSelection(it)
+            toast(getString(R.string.word_is, word))
+            findViewById<ListView>(R.id.words_list).setSelection(it)
             return
         }
         if(isLegal(word)) {
             val res = getResult(word)
-            adapter.append(word, res)
+            adapter.add(word to res)
             wordBox.text = ""
             if(checkResult(res)) {
                 wordGuessed(adapter.count)
@@ -82,8 +80,8 @@ abstract class GameActivityBase : AppCompatActivity(), View.OnClickListener,
     protected lateinit var adapter: WordsListAdapter
     protected lateinit var submitButton: Button
     protected lateinit var wordBox: TextView
-    protected val filter = generateFilter(maxCharacters) {
-        checkChar(it)
+    protected val gameType: String by lazy {
+        intent.getStringExtra("game_type") ?: "normal"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,7 +95,7 @@ abstract class GameActivityBase : AppCompatActivity(), View.OnClickListener,
         }
 
         adapter = WordsListAdapter(this)
-        val list = findViewById<ListView>(R.id.wordsList)
+        val list = findViewById<ListView>(R.id.words_list)
         list.adapter = adapter
         list.transcriptMode = ListView.TRANSCRIPT_MODE_ALWAYS_SCROLL
 
@@ -106,12 +104,14 @@ abstract class GameActivityBase : AppCompatActivity(), View.OnClickListener,
         submitButton.setOnClickListener(this)
 
         wordBox = findViewById(R.id.wordBox)
-        wordBox.filters = arrayOf(InputFilter {
-            p1, p2, p3, p4, p5, p6 ->
-            val (en, res) = filter(p1, p2, p3, p4, p5, p6)
-            submitButton.isEnabled = en
-            res
-        })
+        val filter = filters[gameType]
+        filter?.let {
+            wordBox.filters = arrayOf(InputFilter { p1, p2, p3, p4, p5, p6 ->
+                val (en, res) = it(p1, p2, p3, p4, p5, p6)
+                submitButton.isEnabled = en
+                res
+            })
+        }
         wordBox.setOnKeyListener(this)
 
         startNewGame()

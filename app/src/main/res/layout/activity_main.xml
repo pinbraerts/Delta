@@ -19,12 +19,13 @@
         android:gravity="center">
 
         <TextView
-            android:text="Дельта"
+            android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/textView"
-            android:textSize="50sp"
-            android:textColor="?android:attr/textColorPrimary" />
+            android:text="Дельта"
+            android:textAlignment="center"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="50sp" />
 
         <Space
             android:layout_width="match_parent"
